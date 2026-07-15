@@ -1,732 +1,838 @@
 <!DOCTYPE html>
-<html lang="tr" class="h-full bg-gray-100">
+<html lang="tr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Emlak CRM - 6 Agent Office</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Font Awesome for Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
-  <!-- Supabase JS -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <style>
-    .sidebar-link.active {
-      background-color: #1e293b;
-      color: white;
-    }
-    .sidebar-link {
-      transition: all 0.2s;
-    }
-    .modal-overlay {
-      background: rgba(0,0,0,0.5);
-      backdrop-filter: blur(4px);
-    }
-    /* Hide scrollbar but keep functionality */
-    .no-scrollbar::-webkit-scrollbar { display: none; }
-    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-  </style>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Emlak CRM</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --navy: #0F1923;
+    --navy-light: #1A2B3C;
+    --gold: #C9A84C;
+    --gold-light: #E8C96A;
+    --white: #F7F5F0;
+    --slate: #2C3E50;
+    --muted: #7F8C8D;
+    --green: #27AE60;
+    --red: #E74C3C;
+    --orange: #E67E22;
+    --blue: #2980B9;
+    --border: #2A3F54;
+    --card: #162030;
+    --input-bg: #1E2F40;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--navy); color: var(--white); font-family: var(--font); font-size: 14px; display: flex; height: 100vh; overflow: hidden; }
+
+  /* SIDEBAR */
+  #sidebar {
+    width: 220px; min-width: 220px; background: var(--navy-light);
+    border-right: 1px solid var(--border); display: flex; flex-direction: column;
+    padding: 0; position: relative;
+  }
+  #sidebar-logo {
+    padding: 20px 18px 16px;
+    border-bottom: 2px solid var(--gold);
+  }
+  #sidebar-logo h1 { font-size: 15px; font-weight: 700; color: var(--gold); letter-spacing: 0.5px; }
+  #sidebar-logo p { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  #sidebar nav { flex: 1; padding: 10px 0; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 11px 18px; cursor: pointer; color: #8FA3B1;
+    font-size: 13px; font-weight: 500; border-left: 3px solid transparent;
+    transition: all 0.15s;
+  }
+  .nav-item:hover { background: rgba(201,168,76,0.08); color: var(--white); }
+  .nav-item.active { background: rgba(201,168,76,0.12); color: var(--gold); border-left-color: var(--gold); }
+  .nav-item .icon { font-size: 16px; width: 20px; text-align: center; }
+  #sidebar-footer { padding: 14px 18px; border-top: 1px solid var(--border); }
+  #agent-select { width: 100%; background: var(--input-bg); border: 1px solid var(--border); color: var(--white); padding: 7px 10px; border-radius: 6px; font-size: 12px; }
+
+  /* MAIN */
+  #main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  #topbar {
+    background: var(--navy-light); border-bottom: 1px solid var(--border);
+    padding: 0 24px; height: 54px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+  }
+  #topbar h2 { font-size: 16px; font-weight: 600; }
+  #topbar-actions { display: flex; gap: 10px; align-items: center; }
+  #search-bar { background: var(--input-bg); border: 1px solid var(--border); color: var(--white); padding: 7px 14px; border-radius: 6px; font-size: 13px; width: 240px; }
+  #search-bar::placeholder { color: var(--muted); }
+  .btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.15s; }
+  .btn-gold { background: var(--gold); color: var(--navy); }
+  .btn-gold:hover { background: var(--gold-light); }
+  .btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--white); }
+  .btn-ghost:hover { border-color: var(--gold); color: var(--gold); }
+  .btn-danger { background: var(--red); color: #fff; }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+
+  #content { flex: 1; overflow-y: auto; padding: 24px; }
+
+  /* DASHBOARD CARDS */
+  .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+  .stat-card {
+    background: var(--card); border: 1px solid var(--border); border-top: 3px solid var(--gold);
+    border-radius: 8px; padding: 18px 20px;
+  }
+  .stat-card .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; }
+  .stat-card .value { font-size: 28px; font-weight: 700; color: var(--white); margin: 6px 0 2px; }
+  .stat-card .sub { font-size: 12px; color: var(--muted); }
+
+  /* TABLES */
+  .table-wrap { background: var(--card); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; }
+  thead tr { background: rgba(201,168,76,0.08); }
+  th { padding: 11px 14px; text-align: left; font-size: 11px; font-weight: 600; color: var(--gold); text-transform: uppercase; letter-spacing: 0.6px; white-space: nowrap; }
+  td { padding: 11px 14px; border-top: 1px solid var(--border); font-size: 13px; vertical-align: middle; }
+  tr:hover td { background: rgba(255,255,255,0.03); }
+  .td-actions { display: flex; gap: 6px; }
+
+  /* BADGES */
+  .badge { display: inline-block; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .badge-green { background: rgba(39,174,96,0.2); color: #4dd986; }
+  .badge-orange { background: rgba(230,126,34,0.2); color: #f39c12; }
+  .badge-red { background: rgba(231,76,60,0.2); color: #e74c3c; }
+  .badge-blue { background: rgba(41,128,185,0.2); color: #5dade2; }
+  .badge-gray { background: rgba(127,140,141,0.2); color: #aab; }
+
+  /* MODAL */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; display: flex; align-items: center; justify-content: center; }
+  .modal { background: #1A2B3C; border: 1px solid var(--border); border-top: 3px solid var(--gold); border-radius: 10px; padding: 28px; width: 600px; max-height: 85vh; overflow-y: auto; position: relative; }
+  .modal h3 { font-size: 16px; font-weight: 700; margin-bottom: 20px; color: var(--gold); }
+  .modal-close { position: absolute; top: 16px; right: 16px; background: none; border: none; color: var(--muted); font-size: 20px; cursor: pointer; }
+  .modal-close:hover { color: var(--white); }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-grid .full { grid-column: 1 / -1; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group label { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+  .form-group input, .form-group select, .form-group textarea {
+    background: var(--input-bg); border: 1px solid var(--border); color: var(--white);
+    padding: 9px 12px; border-radius: 6px; font-size: 13px; font-family: var(--font);
+  }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    outline: none; border-color: var(--gold);
+  }
+  .form-group textarea { resize: vertical; min-height: 80px; }
+  .form-group select option { background: var(--navy); }
+  .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--border); }
+
+  /* SECTION HEADERS */
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .section-header h3 { font-size: 15px; font-weight: 600; }
+
+  /* TASKS */
+  .task-item {
+    background: var(--card); border: 1px solid var(--border); border-radius: 7px;
+    padding: 13px 16px; margin-bottom: 10px; display: flex; align-items: center; gap: 12px;
+  }
+  .task-item.done { opacity: 0.5; }
+  .task-item input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--gold); cursor: pointer; }
+  .task-info { flex: 1; }
+  .task-info .task-title { font-size: 13px; font-weight: 500; }
+  .task-info .task-meta { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+  /* EMPTY STATE */
+  .empty { text-align: center; padding: 48px 20px; color: var(--muted); }
+  .empty .icon { font-size: 40px; margin-bottom: 12px; }
+  .empty p { font-size: 14px; }
+
+  /* LOADING */
+  .loading { text-align: center; padding: 40px; color: var(--muted); }
+
+  /* TOAST */
+  #toast { position: fixed; bottom: 24px; right: 24px; background: var(--green); color: #fff; padding: 12px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; z-index: 999; display: none; }
+  #toast.error { background: var(--red); }
+
+  /* TABS for sections */
+  .tabs { display: flex; gap: 0; margin-bottom: 20px; border-bottom: 1px solid var(--border); }
+  .tab { padding: 10px 18px; cursor: pointer; font-size: 13px; font-weight: 500; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* PRICE */
+  .price { font-weight: 600; color: var(--gold-light); }
+
+  @media (max-width: 1100px) {
+    .stat-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
 </head>
-<body class="h-full font-sans antialiased">
+<body>
 
-  <!-- ================================ -->
-  <!-- LOGIN / SIGNUP PAGE (hidden when logged in) -->
-  <!-- ================================ -->
-  <div id="authPage" class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-md w-full space-y-8 bg-white p-8 rounded-2xl shadow-xl">
-      <div class="text-center">
-        <h2 class="mt-6 text-3xl font-extrabold text-gray-900">Emlak CRM</h2>
-        <p class="mt-2 text-sm text-gray-600">6 Kişilik Ofis Ekibiniz için</p>
-      </div>
-      <!-- Tabs -->
-      <div class="flex border-b border-gray-200">
-        <button id="loginTab" class="w-1/2 py-2 text-sm font-medium text-indigo-600 border-b-2 border-indigo-500">Giriş Yap</button>
-        <button id="signupTab" class="w-1/2 py-2 text-sm font-medium text-gray-500 hover:text-gray-700">Kayıt Ol</button>
-      </div>
+<!-- SIDEBAR -->
+<div id="sidebar">
+  <div id="sidebar-logo">
+    <h1>🏠 Emlak CRM</h1>
+    <p>Ofis Yönetim Paneli</p>
+  </div>
+  <nav>
+    <div class="nav-item active" onclick="navigate('dashboard')"><span class="icon">📊</span> Dashboard</div>
+    <div class="nav-item" onclick="navigate('contacts')"><span class="icon">👥</span> Müşteriler</div>
+    <div class="nav-item" onclick="navigate('listings')"><span class="icon">🏢</span> Portföy</div>
+    <div class="nav-item" onclick="navigate('deals')"><span class="icon">🤝</span> İşlemler</div>
+    <div class="nav-item" onclick="navigate('tasks')"><span class="icon">✅</span> Görevler</div>
+  </nav>
+  <div id="sidebar-footer">
+    <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:6px;">Aktif Danışman</label>
+    <select id="agent-select" onchange="setAgent()">
+      <option value="">— Seçiniz —</option>
+    </select>
+  </div>
+</div>
 
-      <!-- Login Form -->
-      <form id="loginForm" class="mt-8 space-y-6">
-        <div class="rounded-md shadow-sm space-y-4">
-          <div>
-            <label class="sr-only">Email</label>
-            <input type="email" id="loginEmail" required class="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm" placeholder="Email adresiniz">
-          </div>
-          <div>
-            <label class="sr-only">Şifre</label>
-            <input type="password" id="loginPassword" required class="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm" placeholder="Şifreniz">
-          </div>
-        </div>
-        <button type="submit" class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-          Giriş Yap
-        </button>
-        <p id="loginError" class="text-red-500 text-sm text-center hidden"></p>
-      </form>
-
-      <!-- Signup Form -->
-      <form id="signupForm" class="mt-8 space-y-6 hidden">
-        <div class="rounded-md shadow-sm space-y-4">
-          <div>
-            <label class="sr-only">Ad Soyad</label>
-            <input type="text" id="signupName" required class="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm" placeholder="Ad Soyad">
-          </div>
-          <div>
-            <label class="sr-only">Email</label>
-            <input type="email" id="signupEmail" required class="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm" placeholder="Email adresiniz">
-          </div>
-          <div>
-            <label class="sr-only">Şifre (min 6)</label>
-            <input type="password" id="signupPassword" required minlength="6" class="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm" placeholder="Şifre (en az 6 karakter)">
-          </div>
-        </div>
-        <button type="submit" class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-          Kayıt Ol
-        </button>
-        <p id="signupError" class="text-red-500 text-sm text-center hidden"></p>
-      </form>
+<!-- MAIN -->
+<div id="main">
+  <div id="topbar">
+    <h2 id="page-title">Dashboard</h2>
+    <div id="topbar-actions">
+      <input type="text" id="search-bar" placeholder="Ara..." oninput="handleSearch(this.value)"/>
+      <button id="primary-btn" class="btn btn-gold" onclick="openAddModal()" style="display:none">+ Ekle</button>
     </div>
   </div>
+  <div id="content">
+    <div class="loading">Yükleniyor...</div>
+  </div>
+</div>
 
-  <!-- ================================ -->
-  <!-- MAIN APP (hidden when logged out) -->
-  <!-- ================================ -->
-  <div id="appPage" class="hidden h-full flex">
-    <!-- SIDEBAR -->
-    <div class="w-64 bg-slate-800 text-white flex flex-col flex-shrink-0 h-screen sticky top-0">
-      <div class="p-5 border-b border-slate-700">
-        <h1 class="text-xl font-bold"><i class="fas fa-building mr-2"></i>Emlak CRM</h1>
-        <p class="text-xs text-slate-400 mt-1" id="sidebarUser">Yükleniyor...</p>
-      </div>
-      <nav class="flex-1 px-3 py-4 space-y-1">
-        <a href="#" data-page="dashboard" class="sidebar-link active flex items-center px-3 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-700 hover:text-white transition"><i class="fas fa-chart-pie w-5"></i> Genel Bakış</a>
-        <a href="#" data-page="properties" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-700 hover:text-white transition"><i class="fas fa-home w-5"></i> Emlaklar</a>
-        <a href="#" data-page="clients" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-700 hover:text-white transition"><i class="fas fa-users w-5"></i> Müşteriler</a>
-        <a href="#" data-page="tasks" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-700 hover:text-white transition"><i class="fas fa-tasks w-5"></i> Görevler</a>
-        <a href="#" data-page="team" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-700 hover:text-white transition"><i class="fas fa-user-friends w-5"></i> Ekip</a>
-      </nav>
-      <div class="p-4 border-t border-slate-700">
-        <button id="logoutBtn" class="w-full flex items-center px-3 py-2 rounded-lg text-sm text-red-400 hover:bg-slate-700 hover:text-red-300 transition"><i class="fas fa-sign-out-alt w-5"></i> Çıkış Yap</button>
-      </div>
-    </div>
-
-    <!-- MAIN CONTENT -->
-    <div class="flex-1 overflow-y-auto p-6 bg-gray-100 h-screen">
-      <!-- Dynamic pages will be rendered here -->
-      <div id="pageContent"></div>
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay" style="display:none" onclick="closeModalOnOverlay(event)">
+  <div class="modal" id="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <h3 id="modal-title">Yeni Kayıt</h3>
+    <div id="modal-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">İptal</button>
+      <button class="btn btn-gold" onclick="saveModal()">Kaydet</button>
     </div>
   </div>
+</div>
 
-  <!-- ================================ -->
-  <!-- GENERIC MODAL (Reusable) -->
-  <!-- ================================ -->
-  <div id="appModal" class="fixed inset-0 z-50 hidden modal-overlay flex items-center justify-center p-4">
-    <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto p-6 relative">
-      <button onclick="closeModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600"><i class="fas fa-times text-xl"></i></button>
-      <div id="modalBody"></div>
+<div id="toast"></div>
+
+<script>
+// ============================================================
+// CONFIG — paste your Supabase URL and anon key here
+// ============================================================
+const SUPABASE_URL = 'https://ezcjpfcwvzcbljdddwfs.supabase.co/';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV6Y2pwZmN3dnpjYmxqZGRkd2ZzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQwMzAwNzMsImV4cCI6MjA5OTYwNjA3M30.MNMCkhLE7WI6MNLr-Mnn-qqNWyz19eP8skX4s_6Ic7k';
+// ============================================================
+
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let currentPage = 'dashboard';
+let currentAgent = null;
+let agents = [];
+let modalMode = null; // 'add' | 'edit'
+let modalType = null;
+let editId = null;
+let searchTimeout = null;
+
+// ============================================================
+// INIT
+// ============================================================
+async function init() {
+  const { data } = await db.from('agents').select('*').order('name');
+  agents = data || [];
+  const sel = document.getElementById('agent-select');
+  agents.forEach(a => {
+    const opt = document.createElement('option');
+    opt.value = a.id;
+    opt.textContent = a.name;
+    sel.appendChild(opt);
+  });
+  const saved = localStorage.getItem('crm_agent');
+  if (saved) { sel.value = saved; currentAgent = saved; }
+  navigate('dashboard');
+}
+
+function setAgent() {
+  const sel = document.getElementById('agent-select');
+  currentAgent = sel.value;
+  localStorage.setItem('crm_agent', currentAgent);
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function navigate(page) {
+  currentPage = page;
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  const navItems = document.querySelectorAll('.nav-item');
+  const pages = ['dashboard','contacts','listings','deals','tasks'];
+  const idx = pages.indexOf(page);
+  if (idx >= 0) navItems[idx].classList.add('active');
+
+  const titles = { dashboard:'Dashboard', contacts:'Müşteriler', listings:'Portföy', deals:'İşlemler', tasks:'Görevler' };
+  document.getElementById('page-title').textContent = titles[page];
+  document.getElementById('primary-btn').style.display = page !== 'dashboard' ? 'inline-block' : 'none';
+
+  const renders = { dashboard: renderDashboard, contacts: renderContacts, listings: renderListings, deals: renderDeals, tasks: renderTasks };
+  renders[page]();
+}
+
+// ============================================================
+// SEARCH
+// ============================================================
+function handleSearch(val) {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => {
+    const renders = { contacts: renderContacts, listings: renderListings, deals: renderDeals, tasks: renderTasks };
+    if (renders[currentPage]) renders[currentPage](val);
+  }, 300);
+}
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+async function renderDashboard() {
+  const content = document.getElementById('content');
+  content.innerHTML = '<div class="loading">Yükleniyor...</div>';
+
+  const [contacts, listings, deals, tasks] = await Promise.all([
+    db.from('contacts').select('id', { count:'exact' }),
+    db.from('listings').select('id,status', { count:'exact' }),
+    db.from('deals').select('id,status,commission_amount,deal_type'),
+    db.from('tasks').select('id,is_done,due_date,title,task_type,assigned_agent_id').eq('is_done', false).order('due_date')
+  ]);
+
+  const activeListings = (listings.data||[]).filter(l => l.status === 'aktif').length;
+  const closedDeals = (deals.data||[]).filter(d => d.status === 'kapandi');
+  const totalComm = closedDeals.reduce((s, d) => s + (d.commission_amount || 0), 0);
+
+  content.innerHTML = `
+    <div class="stat-grid">
+      <div class="stat-card"><div class="label">Toplam Müşteri</div><div class="value">${contacts.count || 0}</div><div class="sub">Kayıtlı müşteri</div></div>
+      <div class="stat-card"><div class="label">Aktif Portföy</div><div class="value">${activeListings}</div><div class="sub">${(listings.count||0)} toplam ilan</div></div>
+      <div class="stat-card"><div class="label">Kapanan İşlem</div><div class="value">${closedDeals.length}</div><div class="sub">${(deals.count||0)} toplam işlem</div></div>
+      <div class="stat-card"><div class="label">Toplam Komisyon</div><div class="value">${formatPrice(totalComm)}</div><div class="sub">Kapanan işlemlerden</div></div>
     </div>
-  </div>
 
-  <!-- ================================ -->
-  <!-- JAVASCRIPT -->
-  <!-- ================================ -->
-  <script>
-    // ============================================================
-    // 1. CONFIGURE SUPABASE (REPLACE THESE!)
-    // ============================================================
-    const SUPABASE_URL = 'YOUR_SUPABASE_URL'; // e.g. https://xxxxx.supabase.co
-    const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+      <div>
+        <div class="section-header"><h3>📋 Yaklaşan Görevler</h3></div>
+        <div id="dash-tasks"></div>
+      </div>
+      <div>
+        <div class="section-header"><h3>🔥 Son Eklen Portföy</h3></div>
+        <div id="dash-listings"></div>
+      </div>
+    </div>
+  `;
 
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    // ============================================================
-    // 2. STATE
-    // ============================================================
-    let currentUser = null;
-    let currentProfile = null;
-    let agentsList = []; // for dropdowns
-
-    // ============================================================
-    // 3. DOM REFS
-    // ============================================================
-    const authPage = document.getElementById('authPage');
-    const appPage = document.getElementById('appPage');
-    const pageContent = document.getElementById('pageContent');
-    const sidebarUser = document.getElementById('sidebarUser');
-
-    // Auth tabs
-    const loginTab = document.getElementById('loginTab');
-    const signupTab = document.getElementById('signupTab');
-    const loginForm = document.getElementById('loginForm');
-    const signupForm = document.getElementById('signupForm');
-
-    // ============================================================
-    // 4. AUTH LOGIC
-    // ============================================================
-    loginTab.addEventListener('click', () => {
-      loginTab.className = 'w-1/2 py-2 text-sm font-medium text-indigo-600 border-b-2 border-indigo-500';
-      signupTab.className = 'w-1/2 py-2 text-sm font-medium text-gray-500 hover:text-gray-700';
-      loginForm.classList.remove('hidden');
-      signupForm.classList.add('hidden');
-    });
-    signupTab.addEventListener('click', () => {
-      signupTab.className = 'w-1/2 py-2 text-sm font-medium text-indigo-600 border-b-2 border-indigo-500';
-      loginTab.className = 'w-1/2 py-2 text-sm font-medium text-gray-500 hover:text-gray-700';
-      signupForm.classList.remove('hidden');
-      loginForm.classList.add('hidden');
-    });
-
-    loginForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const email = document.getElementById('loginEmail').value;
-      const password = document.getElementById('loginPassword').value;
-      const errorEl = document.getElementById('loginError');
-      errorEl.classList.add('hidden');
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) { errorEl.textContent = error.message; errorEl.classList.remove('hidden'); return; }
-      window.location.reload(); // simple reload to fetch session
-    });
-
-    signupForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const name = document.getElementById('signupName').value;
-      const email = document.getElementById('signupEmail').value;
-      const password = document.getElementById('signupPassword').value;
-      const errorEl = document.getElementById('signupError');
-      errorEl.classList.add('hidden');
-      const { data, error } = await supabase.auth.signUp({
-        email, password,
-        options: { data: { full_name: name } }
-      });
-      if (error) { errorEl.textContent = error.message; errorEl.classList.remove('hidden'); return; }
-      alert('Kayıt başarılı! Giriş yapabilirsiniz.');
-      loginTab.click();
-    });
-
-    document.getElementById('logoutBtn').addEventListener('click', async () => {
-      await supabase.auth.signOut();
-      window.location.reload();
-    });
-
-    // ============================================================
-    // 5. SESSION & PROFILE CHECK
-    // ============================================================
-    async function initSession() {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        authPage.classList.remove('hidden');
-        appPage.classList.add('hidden');
-        return;
-      }
-      currentUser = session.user;
-      authPage.classList.add('hidden');
-      appPage.classList.remove('hidden');
-
-      // Fetch profile
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', currentUser.id)
-        .single();
-      currentProfile = profile;
-      sidebarUser.textContent = profile?.full_name || currentUser.email;
-
-      // Fetch all agents for dropdowns
-      const { data: agents } = await supabase
-        .from('profiles')
-        .select('id, full_name');
-      agentsList = agents || [];
-
-      // Load default page
-      navigateTo('dashboard');
-    }
-
-    // Listen for auth changes
-    supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_OUT' || !session) {
-        window.location.reload();
-      }
-    });
-
-    // ============================================================
-    // 6. NAVIGATION
-    // ============================================================
-    document.querySelectorAll('.sidebar-link').forEach(link => {
-      link.addEventListener('click', (e) => {
-        e.preventDefault();
-        document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
-        link.classList.add('active');
-        const page = link.dataset.page;
-        navigateTo(page);
-      });
-    });
-
-    async function navigateTo(page) {
-      switch (page) {
-        case 'dashboard': await renderDashboard(); break;
-        case 'properties': await renderProperties(); break;
-        case 'clients': await renderClients(); break;
-        case 'tasks': await renderTasks(); break;
-        case 'team': await renderTeam(); break;
-        default: pageContent.innerHTML = '<h1>404</h1>';
-      }
-    }
-
-    // ============================================================
-    // 7. HELPERS & MODAL
-    // ============================================================
-    function openModal(html) {
-      document.getElementById('modalBody').innerHTML = html;
-      document.getElementById('appModal').classList.remove('hidden');
-    }
-    window.closeModal = function() {
-      document.getElementById('appModal').classList.add('hidden');
-    };
-
-    function getAgentName(id) {
-      const a = agentsList.find(x => x.id === id);
-      return a ? a.full_name : 'Atanmamış';
-    }
-
-    function currencySymbol(curr) {
-      if (curr === 'TRY') return '₺';
-      if (curr === 'USD') return '$';
-      if (curr === 'EUR') return '€';
-      return curr;
-    }
-
-    function formatDate(dateStr) {
-      if (!dateStr) return '-';
-      const d = new Date(dateStr);
-      return d.toLocaleDateString('tr-TR');
-    }
-
-    function statusBadge(status) {
-      const map = {
-        'satilik': 'bg-blue-100 text-blue-800',
-        'kiralik': 'bg-green-100 text-green-800',
-        'pending': 'bg-yellow-100 text-yellow-800',
-        'completed': 'bg-green-100 text-green-800',
-        'cancelled': 'bg-red-100 text-red-800',
-        'high': 'bg-red-100 text-red-800',
-        'medium': 'bg-orange-100 text-orange-800',
-        'low': 'bg-gray-100 text-gray-800'
-      };
-      return map[status] || 'bg-gray-100 text-gray-800';
-    }
-
-    // ============================================================
-    // 8. DASHBOARD
-    // ============================================================
-    async function renderDashboard() {
-      const [propsRes, clientsRes, tasksRes, interRes] = await Promise.all([
-        supabase.from('properties').select('*', { count: 'exact' }),
-        supabase.from('clients').select('*', { count: 'exact' }),
-        supabase.from('tasks').select('*', { count: 'exact' }).eq('status', 'pending'),
-        supabase.from('interactions').select('*', { count: 'exact' })
-      ]);
-
-      const totalProps = propsRes.count || 0;
-      const totalClients = clientsRes.count || 0;
-      const pendingTasks = tasksRes.count || 0;
-      const totalInter = interRes.count || 0;
-
-      pageContent.innerHTML = `
-        <h2 class="text-2xl font-bold text-gray-800 mb-6">📊 Genel Bakış</h2>
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-indigo-500">
-            <p class="text-sm text-gray-500">Toplam Emlak</p>
-            <p class="text-3xl font-bold">${totalProps}</p>
-          </div>
-          <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500">
-            <p class="text-sm text-gray-500">Toplam Müşteri</p>
-            <p class="text-3xl font-bold">${totalClients}</p>
-          </div>
-          <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-yellow-500">
-            <p class="text-sm text-gray-500">Bekleyen Görev</p>
-            <p class="text-3xl font-bold">${pendingTasks}</p>
-          </div>
-          <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-green-500">
-            <p class="text-sm text-gray-500">Görüşme Kaydı</p>
-            <p class="text-3xl font-bold">${totalInter}</p>
-          </div>
+  // Upcoming tasks
+  const taskEl = document.getElementById('dash-tasks');
+  const upcomingTasks = (tasks.data||[]).slice(0, 6);
+  if (!upcomingTasks.length) {
+    taskEl.innerHTML = '<div class="empty"><div class="icon">✅</div><p>Bekleyen görev yok</p></div>';
+  } else {
+    taskEl.innerHTML = upcomingTasks.map(t => {
+      const agent = agents.find(a => a.id === t.assigned_agent_id);
+      const due = t.due_date ? new Date(t.due_date).toLocaleDateString('tr-TR') : '-';
+      return `<div class="task-item">
+        <input type="checkbox" onchange="toggleTask('${t.id}', this)">
+        <div class="task-info">
+          <div class="task-title">${t.title}</div>
+          <div class="task-meta">${taskTypeName(t.task_type)} · ${due}${agent ? ' · ' + agent.name : ''}</div>
         </div>
-        <div class="mt-8 bg-white p-6 rounded-xl shadow-sm">
-          <p class="text-sm text-gray-500">Hoş geldin, ${currentProfile?.full_name || 'Agent'}! Bugün ekibinle birlikte çalışmaya hazırsın.</p>
+      </div>`;
+    }).join('');
+  }
+
+  // Recent listings
+  const { data: recentListings } = await db.from('listings').select('*').order('created_at', { ascending: false }).limit(5);
+  const listEl = document.getElementById('dash-listings');
+  if (!(recentListings||[]).length) {
+    listEl.innerHTML = '<div class="empty"><div class="icon">🏢</div><p>Henüz portföy yok</p></div>';
+  } else {
+    listEl.innerHTML = `<div class="table-wrap"><table>
+      <thead><tr><th>İlan</th><th>Tür</th><th>Fiyat</th><th>Durum</th></tr></thead>
+      <tbody>${recentListings.map(l => `<tr>
+        <td>${l.title}</td>
+        <td>${l.property_type}</td>
+        <td class="price">${formatPrice(l.price)} ${l.currency==='TRY'?'₺':'$'}</td>
+        <td>${statusBadge(l.status)}</td>
+      </tr>`).join('')}</tbody>
+    </table></div>`;
+  }
+}
+
+// ============================================================
+// CONTACTS
+// ============================================================
+async function renderContacts(search='') {
+  const content = document.getElementById('content');
+  content.innerHTML = '<div class="loading">Yükleniyor...</div>';
+
+  let q = db.from('contacts').select('*, agents(name)').order('created_at', { ascending: false });
+  if (search) q = q.ilike('full_name', `%${search}%`);
+  const { data } = await q;
+
+  const rows = (data||[]).map(c => {
+    const agent = c.agents?.name || '-';
+    const follow = c.follow_up_date ? new Date(c.follow_up_date).toLocaleDateString('tr-TR') : '-';
+    return `<tr>
+      <td><b>${c.full_name}</b></td>
+      <td>${c.phone||'-'}</td>
+      <td>${contactTypeName(c.contact_type)}</td>
+      <td>${sourceName(c.source)}</td>
+      <td>${c.preferred_districts||'-'}</td>
+      <td>${c.budget_max ? formatPrice(c.budget_max)+' ₺' : '-'}</td>
+      <td>${follow}</td>
+      <td>${agent}</td>
+      <td><div class="td-actions">
+        <button class="btn btn-ghost btn-sm" onclick="editContact('${c.id}')">Düzenle</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteRecord('contacts','${c.id}')">Sil</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+
+  content.innerHTML = `
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Ad Soyad</th><th>Telefon</th><th>Tür</th><th>Kaynak</th><th>İlçe Tercihi</th><th>Bütçe (max)</th><th>Takip Tarihi</th><th>Danışman</th><th>İşlem</th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="9"><div class="empty"><p>Müşteri bulunamadı</p></div></td></tr>'}</tbody>
+      </table>
+    </div>`;
+}
+
+async function editContact(id) {
+  const { data } = await db.from('contacts').select('*').eq('id', id).single();
+  openModal('contacts', 'edit', data);
+}
+
+// ============================================================
+// LISTINGS
+// ============================================================
+async function renderListings(search='') {
+  const content = document.getElementById('content');
+  content.innerHTML = '<div class="loading">Yükleniyor...</div>';
+
+  let q = db.from('listings').select('*, agents(name)').order('created_at', { ascending: false });
+  if (search) q = q.ilike('title', `%${search}%`);
+  const { data } = await q;
+
+  const rows = (data||[]).map(l => {
+    const agent = l.agents?.name || '-';
+    return `<tr>
+      <td><b>${l.title}</b></td>
+      <td>${l.property_type}</td>
+      <td>${l.deal_type === 'satilik' ? '🔵 Satılık' : '🟢 Kiralık'}</td>
+      <td>${l.district||'-'}, ${l.neighborhood||'-'}</td>
+      <td>${l.net_m2||'-'} m²</td>
+      <td>${l.rooms||'-'}</td>
+      <td class="price">${formatPrice(l.price)} ${l.currency==='TRY'?'₺':'$'}</td>
+      <td>${statusBadge(l.status)}</td>
+      <td>${agent}</td>
+      <td><div class="td-actions">
+        <button class="btn btn-ghost btn-sm" onclick="editListing('${l.id}')">Düzenle</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteRecord('listings','${l.id}')">Sil</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+
+  content.innerHTML = `
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Başlık</th><th>Tür</th><th>Durum</th><th>Konum</th><th>m²</th><th>Oda</th><th>Fiyat</th><th>Statü</th><th>Danışman</th><th>İşlem</th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="10"><div class="empty"><p>Portföy bulunamadı</p></div></td></tr>'}</tbody>
+      </table>
+    </div>`;
+}
+
+async function editListing(id) {
+  const { data } = await db.from('listings').select('*').eq('id', id).single();
+  openModal('listings', 'edit', data);
+}
+
+// ============================================================
+// DEALS
+// ============================================================
+async function renderDeals(search='') {
+  const content = document.getElementById('content');
+  content.innerHTML = '<div class="loading">Yükleniyor...</div>';
+
+  const { data } = await db.from('deals').select(`
+    *, 
+    listings(title),
+    buyer:buyer_contact_id(full_name),
+    seller:seller_contact_id(full_name),
+    agents(name)
+  `).order('created_at', { ascending: false });
+
+  const rows = (data||[]).map(d => {
+    const buyer = d.buyer?.full_name || '-';
+    const seller = d.seller?.full_name || '-';
+    const listing = d.listings?.title || '-';
+    const agent = d.agents?.name || '-';
+    return `<tr>
+      <td><b>${listing}</b></td>
+      <td>${d.deal_type === 'satis' ? '🔵 Satış' : '🟢 Kiralama'}</td>
+      <td>${buyer}</td>
+      <td>${seller}</td>
+      <td class="price">${d.final_price ? formatPrice(d.final_price)+' ₺' : '-'}</td>
+      <td class="price" style="color:#4dd986">${d.commission_amount ? formatPrice(d.commission_amount)+' ₺' : '-'}</td>
+      <td>${dealStatusBadge(d.status)}</td>
+      <td>${d.tapu_date ? new Date(d.tapu_date).toLocaleDateString('tr-TR') : '-'}</td>
+      <td>${agent}</td>
+      <td><div class="td-actions">
+        <button class="btn btn-ghost btn-sm" onclick="editDeal('${d.id}')">Düzenle</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteRecord('deals','${d.id}')">Sil</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+
+  content.innerHTML = `
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>İlan</th><th>Tür</th><th>Alıcı</th><th>Satıcı</th><th>Satış Fiyatı</th><th>Komisyon</th><th>Durum</th><th>Tapu Tarihi</th><th>Danışman</th><th>İşlem</th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="10"><div class="empty"><p>İşlem bulunamadı</p></div></td></tr>'}</tbody>
+      </table>
+    </div>`;
+}
+
+async function editDeal(id) {
+  const { data } = await db.from('deals').select('*').eq('id', id).single();
+  openModal('deals', 'edit', data);
+}
+
+// ============================================================
+// TASKS
+// ============================================================
+async function renderTasks(search='') {
+  const content = document.getElementById('content');
+  content.innerHTML = '<div class="loading">Yükleniyor...</div>';
+
+  let q = db.from('tasks').select('*, agents(name)').order('is_done').order('due_date');
+  if (search) q = q.ilike('title', `%${search}%`);
+  const { data } = await q;
+
+  const pending = (data||[]).filter(t => !t.is_done);
+  const done = (data||[]).filter(t => t.is_done);
+
+  const renderTask = (t) => {
+    const agent = t.agents?.name || '-';
+    const due = t.due_date ? new Date(t.due_date).toLocaleDateString('tr-TR', { day:'2-digit', month:'short', year:'numeric' }) : '-';
+    const isOverdue = t.due_date && !t.is_done && new Date(t.due_date) < new Date();
+    return `<div class="task-item ${t.is_done ? 'done' : ''}">
+      <input type="checkbox" ${t.is_done ? 'checked' : ''} onchange="toggleTask('${t.id}', this)">
+      <div class="task-info">
+        <div class="task-title" style="${t.is_done ? 'text-decoration:line-through' : ''}">${t.title}</div>
+        <div class="task-meta" style="${isOverdue ? 'color:#e74c3c' : ''}">
+          ${taskTypeName(t.task_type)} · ${due}${isOverdue && !t.is_done ? ' ⚠️ Gecikti' : ''} · ${agent}
         </div>
-      `;
-    }
+      </div>
+      <button class="btn btn-danger btn-sm" onclick="deleteRecord('tasks','${t.id}')">Sil</button>
+    </div>`;
+  };
 
-    // ============================================================
-    // 9. PROPERTIES (CRUD)
-    // ============================================================
-    async function renderProperties() {
-      const { data: properties, error } = await supabase
-        .from('properties')
-        .select('*, assigned_agent_id(id, full_name), created_by(id, full_name)')
-        .order('created_at', { ascending: false });
+  content.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+      <div>
+        <div class="section-header"><h3>⏳ Bekleyen (${pending.length})</h3></div>
+        ${pending.length ? pending.map(renderTask).join('') : '<div class="empty"><div class="icon">🎉</div><p>Tüm görevler tamamlandı!</p></div>'}
+      </div>
+      <div>
+        <div class="section-header"><h3>✅ Tamamlanan (${done.length})</h3></div>
+        ${done.slice(0,10).map(renderTask).join('')}
+      </div>
+    </div>`;
+}
 
-      let rows = '';
-      properties?.forEach(p => {
-        rows += `
-          <tr class="border-b hover:bg-gray-50">
-            <td class="px-4 py-3 font-medium">${p.title}</td>
-            <td class="px-4 py-3"><span class="px-2 py-1 text-xs rounded-full ${statusBadge(p.status)}">${p.status === 'satilik' ? 'Satılık' : 'Kiralık'}</span></td>
-            <td class="px-4 py-3">${p.price} ${currencySymbol(p.currency)}</td>
-            <td class="px-4 py-3">${p.city || '-'} / ${p.district || '-'}</td>
-            <td class="px-4 py-3">${getAgentName(p.assigned_agent_id)}</td>
-            <td class="px-4 py-3">
-              <button onclick="editProperty('${p.id}')" class="text-indigo-600 hover:text-indigo-900 mr-2"><i class="fas fa-edit"></i></button>
-              <button onclick="deleteProperty('${p.id}')" class="text-red-600 hover:text-red-900"><i class="fas fa-trash"></i></button>
-            </td>
-          </tr>
-        `;
-      });
+async function toggleTask(id, checkbox) {
+  await db.from('tasks').update({ is_done: checkbox.checked }).eq('id', id);
+  renderTasks();
+}
 
-      pageContent.innerHTML = `
-        <div class="flex justify-between items-center mb-6">
-          <h2 class="text-2xl font-bold text-gray-800">🏠 Emlaklar</h2>
-          <button onclick="showAddProperty()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium"><i class="fas fa-plus mr-2"></i>Yeni Emlak Ekle</button>
-        </div>
-        <div class="bg-white rounded-xl shadow-sm overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-              <tr>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Başlık</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Durum</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fiyat</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Lokasyon</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sorumlu</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">İşlem</th>
-              </tr>
-            </thead>
-            <tbody>${rows || '<tr><td colspan="6" class="text-center py-6 text-gray-400">Henüz emlak eklenmemiş.</td></tr>'}</tbody>
-          </table>
-        </div>
-      `;
-    }
+// ============================================================
+// MODAL SYSTEM
+// ============================================================
+function openAddModal() {
+  openModal(currentPage, 'add', {});
+}
 
-    window.showAddProperty = function() {
-      const agentOptions = agentsList.map(a => `<option value="${a.id}">${a.full_name}</option>`).join('');
-      openModal(`
-        <h3 class="text-xl font-bold mb-4">Yeni Emlak Ekle</h3>
-        <form id="propertyForm" class="grid grid-cols-2 gap-4">
-          <input type="text" name="title" placeholder="Başlık *" required class="col-span-2 border p-2 rounded"/>
-          <select name="status" class="border p-2 rounded"><option value="satilik">Satılık</option><option value="kiralik">Kiralık</option></select>
-          <select name="category" class="border p-2 rounded"><option value="konut">Konut</option><option value="isyeri">İş Yeri</option><option value="arsa">Arsa</option></select>
-          <input type="number" name="price" placeholder="Fiyat" class="border p-2 rounded"/>
-          <select name="currency" class="border p-2 rounded"><option value="TRY">TRY</option><option value="USD">USD</option><option value="EUR">EUR</option></select>
-          <input type="text" name="city" placeholder="İl" class="border p-2 rounded"/>
-          <input type="text" name="district" placeholder="İlçe" class="border p-2 rounded"/>
-          <input type="text" name="neighborhood" placeholder="Mahalle" class="border p-2 rounded"/>
-          <input type="text" name="address_detail" placeholder="Açık Adres" class="col-span-2 border p-2 rounded"/>
-          <input type="number" name="net_m2" placeholder="Net m2" class="border p-2 rounded"/>
-          <input type="number" name="gross_m2" placeholder="Brüt m2" class="border p-2 rounded"/>
-          <input type="text" name="room_count" placeholder="Oda (örn: 3+1)" class="border p-2 rounded"/>
-          <input type="text" name="floor" placeholder="Kat" class="border p-2 rounded"/>
-          <input type="text" name="total_floors" placeholder="Toplam Kat" class="border p-2 rounded"/>
-          <input type="text" name="building_year" placeholder="Yapım Yılı" class="border p-2 rounded"/>
-          <input type="text" name="heating_type" placeholder="Isıtma (Kombi/Merkezi)" class="border p-2 rounded"/>
-          <select name="tapu_durumu" class="border p-2 rounded"><option value="kat_mulkiyeti">Kat Mülkiyeti</option><option value="kat_irtifaki">Kat İrtifakı</option><option value="hisseli">Hisseli</option></select>
-          <select name="iskan_durumu" class="border p-2 rounded"><option value="var">Var</option><option value="yok">Yok</option><option value="bekliyor">Bekliyor</option></select>
-          <input type="date" name="dask_expiry_date" class="border p-2 rounded"/>
-          <label class="flex items-center"><input type="checkbox" name="kentsel_donusum" value="true"/> Kentsel Dönüşüm</label>
-          <label class="flex items-center"><input type="checkbox" name="kredi_uygun" value="true" checked/> Kredi Uygun</label>
-          <input type="number" name="aidat" placeholder="Aidat" class="border p-2 rounded"/>
-          <textarea name="description" placeholder="Açıklama" class="col-span-2 border p-2 rounded" rows="2"></textarea>
-          <input type="text" name="owner_name" placeholder="Sahip Adı" class="border p-2 rounded"/>
-          <input type="text" name="owner_phone" placeholder="Sahip Telefon" class="border p-2 rounded"/>
-          <textarea name="owner_notes" placeholder="Sahip Notları" class="col-span-2 border p-2 rounded" rows="2"></textarea>
-          <select name="assigned_agent_id" class="col-span-2 border p-2 rounded">
-            <option value="">Sorumlu Agent Seç</option>
-            ${agentOptions}
-          </select>
-          <div class="col-span-2 flex justify-end space-x-3 mt-4">
-            <button type="button" onclick="closeModal()" class="px-4 py-2 bg-gray-200 rounded">İptal</button>
-            <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded">Kaydet</button>
-          </div>
-        </form>
-      `);
+function openModal(type, mode, data) {
+  modalType = type;
+  modalMode = mode;
+  editId = data?.id || null;
 
-      document.getElementById('propertyForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const form = e.target;
-        const data = new FormData(form);
-        const payload = Object.fromEntries(data.entries());
-        // handle checkboxes
-        payload.kentsel_donusum = !!data.get('kentsel_donusum');
-        payload.kredi_uygun = !!data.get('kredi_uygun');
-        payload.price = parseFloat(payload.price) || 0;
-        payload.aidat = parseFloat(payload.aidat) || 0;
-        payload.created_by = currentUser.id;
+  const titles = { contacts:'Müşteri', listings:'Portföy İlanı', deals:'İşlem', tasks:'Görev' };
+  document.getElementById('modal-title').textContent = (mode === 'add' ? 'Yeni ' : '') + (titles[type] || '') + (mode === 'edit' ? ' Düzenle' : '');
 
-        const { error } = await supabase.from('properties').insert([payload]);
-        if (error) { alert('Hata: ' + error.message); return; }
-        closeModal();
-        renderProperties();
-      });
+  const forms = { contacts: contactForm, listings: listingForm, deals: dealForm, tasks: taskForm };
+  document.getElementById('modal-body').innerHTML = forms[type](data);
+  document.getElementById('modal-overlay').style.display = 'flex';
+}
+
+function closeModal() { document.getElementById('modal-overlay').style.display = 'none'; }
+function closeModalOnOverlay(e) { if (e.target === document.getElementById('modal-overlay')) closeModal(); }
+
+async function saveModal() {
+  const getVal = id => document.getElementById(id)?.value || null;
+  const getNum = id => { const v = getVal(id); return v ? parseFloat(v) : null; };
+  const getInt = id => { const v = getVal(id); return v ? parseInt(v) : null; };
+
+  let payload = {};
+
+  if (modalType === 'contacts') {
+    payload = {
+      full_name: getVal('f_full_name'), phone: getVal('f_phone'), email: getVal('f_email'),
+      tc_kimlik: getVal('f_tc'), contact_type: getVal('f_contact_type'), source: getVal('f_source'),
+      budget_min: getNum('f_budget_min'), budget_max: getNum('f_budget_max'),
+      preferred_districts: getVal('f_districts'), notes: getVal('f_notes'),
+      assigned_agent_id: getVal('f_agent') || null, follow_up_date: getVal('f_follow_up') || null
     };
+    if (!payload.full_name) { showToast('Ad Soyad zorunlu', true); return; }
+  }
 
-    window.editProperty = async function(id) {
-      const { data: p, error } = await supabase.from('properties').select('*').eq('id', id).single();
-      if (error) { alert('Veri alınamadı'); return; }
-      const agentOptions = agentsList.map(a => 
-        `<option value="${a.id}" ${a.id === p.assigned_agent_id ? 'selected' : ''}>${a.full_name}</option>`
-      ).join('');
-      // Simple edit modal - reuse same form but filled
-      openModal(`
-        <h3 class="text-xl font-bold mb-4">Emlak Düzenle</h3>
-        <form id="editPropertyForm" class="grid grid-cols-2 gap-4">
-          ${Object.keys(p).map(key => {
-            if (['id','created_at','updated_at','created_by'].includes(key)) return '';
-            const val = p[key] || '';
-            if (key === 'kentsel_donusum' || key === 'kredi_uygun') {
-              return `<label class="flex items-center col-span-2"><input type="checkbox" name="${key}" value="true" ${val ? 'checked' : ''}/> ${key === 'kentsel_donusum' ? 'Kentsel Dönüşüm' : 'Kredi Uygun'}</label>`;
-            }
-            if (key === 'assigned_agent_id') {
-              return `<select name="${key}" class="col-span-2 border p-2 rounded"><option value="">Sorumlu Agent</option>${agentOptions}</select>`;
-            }
-            if (key === 'status') return `<select name="${key}" class="border p-2 rounded"><option value="satilik" ${val==='satilik'?'selected':''}>Satılık</option><option value="kiralik" ${val==='kiralik'?'selected':''}>Kiralık</option></select>`;
-            if (key === 'category') return `<select name="${key}" class="border p-2 rounded"><option value="konut" ${val==='konut'?'selected':''}>Konut</option><option value="isyeri" ${val==='isyeri'?'selected':''}>İş Yeri</option><option value="arsa" ${val==='arsa'?'selected':''}>Arsa</option></select>`;
-            if (key === 'currency') return `<select name="${key}" class="border p-2 rounded"><option value="TRY" ${val==='TRY'?'selected':''}>TRY</option><option value="USD" ${val==='USD'?'selected':''}>USD</option><option value="EUR" ${val==='EUR'?'selected':''}>EUR</option></select>`;
-            if (key === 'tapu_durumu') return `<select name="${key}" class="border p-2 rounded"><option value="kat_mulkiyeti" ${val==='kat_mulkiyeti'?'selected':''}>Kat Mülkiyeti</option><option value="kat_irtifaki" ${val==='kat_irtifaki'?'selected':''}>Kat İrtifakı</option><option value="hisseli" ${val==='hisseli'?'selected':''}>Hisseli</option></select>`;
-            if (key === 'iskan_durumu') return `<select name="${key}" class="border p-2 rounded"><option value="var" ${val==='var'?'selected':''}>Var</option><option value="yok" ${val==='yok'?'selected':''}>Yok</option><option value="bekliyor" ${val==='bekliyor'?'selected':''}>Bekliyor</option></select>`;
-            if (key === 'dask_expiry_date') return `<input type="date" name="${key}" value="${val}" class="border p-2 rounded"/>`;
-            if (key === 'description' || key === 'owner_notes') return `<textarea name="${key}" class="col-span-2 border p-2 rounded" rows="2">${val}</textarea>`;
-            if (typeof val === 'boolean') return '';
-            return `<input type="text" name="${key}" placeholder="${key}" value="${val}" class="border p-2 rounded ${['title','address_detail','owner_name','owner_phone','city','district','neighborhood','room_count','floor','total_floors','building_year','heating_type','orientation'].includes(key) ? '' : ''}"/>`;
-          }).join('')}
-          <div class="col-span-2 flex justify-end space-x-3 mt-4">
-            <button type="button" onclick="closeModal()" class="px-4 py-2 bg-gray-200 rounded">İptal</button>
-            <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded">Güncelle</button>
-          </div>
-        </form>
-      `);
-      document.getElementById('editPropertyForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const form = e.target;
-        const data = new FormData(form);
-        const payload = Object.fromEntries(data.entries());
-        payload.kentsel_donusum = !!data.get('kentsel_donusum');
-        payload.kredi_uygun = !!data.get('kredi_uygun');
-        payload.price = parseFloat(payload.price) || 0;
-        payload.aidat = parseFloat(payload.aidat) || 0;
-        const { error } = await supabase.from('properties').update(payload).eq('id', id);
-        if (error) { alert('Hata: ' + error.message); return; }
-        closeModal();
-        renderProperties();
-      });
+  if (modalType === 'listings') {
+    payload = {
+      title: getVal('f_title'), property_type: getVal('f_property_type'), deal_type: getVal('f_deal_type'),
+      status: getVal('f_status'), city: getVal('f_city')||'İstanbul', district: getVal('f_district'),
+      neighborhood: getVal('f_neighborhood'), address: getVal('f_address'), ada_parsel: getVal('f_ada'),
+      tapu_type: getVal('f_tapu_type'), gross_m2: getNum('f_gross'), net_m2: getNum('f_net'),
+      floor_number: getInt('f_floor'), total_floors: getInt('f_total_floors'), building_age: getInt('f_age'),
+      rooms: getVal('f_rooms'), heating: getVal('f_heating'), price: getNum('f_price'),
+      aidat: getNum('f_aidat'), ekb_class: getVal('f_ekb'), listing_url: getVal('f_url'),
+      notes: getVal('f_notes'), assigned_agent_id: getVal('f_agent') || null
     };
+    if (!payload.title || !payload.price) { showToast('Başlık ve fiyat zorunlu', true); return; }
+  }
 
-    window.deleteProperty = async function(id) {
-      if (!confirm('Bu emlağı silmek istediğinize emin misiniz?')) return;
-      await supabase.from('properties').delete().eq('id', id);
-      renderProperties();
+  if (modalType === 'deals') {
+    const fp = getNum('f_final_price');
+    const br = getNum('f_comm_buyer') || 2;
+    const sr = getNum('f_comm_seller') || 2;
+    const comm = fp ? fp * (br + sr) / 100 : null;
+    payload = {
+      deal_type: getVal('f_deal_type'), status: getVal('f_status'),
+      asking_price: getNum('f_asking_price'), final_price: fp,
+      commission_rate_buyer: br, commission_rate_seller: sr, commission_amount: comm,
+      contract_date: getVal('f_contract_date') || null, tapu_date: getVal('f_tapu_date') || null,
+      handover_date: getVal('f_handover') || null, notary_name: getVal('f_notary'),
+      notes: getVal('f_notes'), assigned_agent_id: getVal('f_agent') || null
     };
+  }
 
-    // ============================================================
-    // 10. CLIENTS (Simplified CRUD - similar pattern)
-    // ============================================================
-    async function renderClients() {
-      const { data: clients } = await supabase
-        .from('clients')
-        .select('*, assigned_agent_id(id, full_name)')
-        .order('created_at', { ascending: false });
-
-      let rows = '';
-      clients?.forEach(c => {
-        rows += `
-          <tr class="border-b hover:bg-gray-50">
-            <td class="px-4 py-3">${c.first_name} ${c.last_name}</td>
-            <td class="px-4 py-3">${c.phone}</td>
-            <td class="px-4 py-3">${c.client_type || '-'}</td>
-            <td class="px-4 py-3">${c.lead_source || '-'}</td>
-            <td class="px-4 py-3">${getAgentName(c.assigned_agent_id)}</td>
-            <td class="px-4 py-3">
-              <button onclick="editClient('${c.id}')" class="text-indigo-600 hover:text-indigo-900 mr-2"><i class="fas fa-edit"></i></button>
-              <button onclick="deleteClient('${c.id}')" class="text-red-600 hover:text-red-900"><i class="fas fa-trash"></i></button>
-            </td>
-          </tr>
-        `;
-      });
-
-      pageContent.innerHTML = `
-        <div class="flex justify-between items-center mb-6">
-          <h2 class="text-2xl font-bold text-gray-800">👥 Müşteriler</h2>
-          <button onclick="showAddClient()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium"><i class="fas fa-plus mr-2"></i>Yeni Müşteri Ekle</button>
-        </div>
-        <div class="bg-white rounded-xl shadow-sm overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-              <tr><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ad Soyad</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Telefon</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tür</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kaynak</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sorumlu</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">İşlem</th></tr>
-            </thead>
-            <tbody>${rows || '<tr><td colspan="6" class="text-center py-6 text-gray-400">Henüz müşteri eklenmemiş.</td></tr>'}</tbody>
-          </table>
-        </div>
-      `;
-    }
-
-    window.showAddClient = function() {
-      const agentOptions = agentsList.map(a => `<option value="${a.id}">${a.full_name}</option>`).join('');
-      openModal(`
-        <h3 class="text-xl font-bold mb-4">Yeni Müşteri Ekle</h3>
-        <form id="clientForm" class="grid grid-cols-2 gap-4">
-          <input type="text" name="first_name" placeholder="Ad *" required class="border p-2 rounded"/>
-          <input type="text" name="last_name" placeholder="Soyad *" required class="border p-2 rounded"/>
-          <input type="text" name="tc_kimlik" placeholder="TC Kimlik" class="border p-2 rounded"/>
-          <select name="citizenship" class="border p-2 rounded"><option value="TC">TC</option><option value="Yabanci">Yabancı</option></select>
-          <input type="text" name="phone" placeholder="Telefon *" required class="border p-2 rounded"/>
-          <input type="email" name="email" placeholder="Email" class="border p-2 rounded"/>
-          <input type="text" name="preferred_contact_time" placeholder="Uygun Görüşme Zamanı" class="border p-2 rounded"/>
-          <select name="lead_source" class="border p-2 rounded"><option value="">Kaynak</option><option>Sahibinden</option><option>Emlakjet</option><option>Hepsiemlak</option><option>Zingat</option><option>Referans</option><option>Sosyal Medya</option><option>Vitrin</option></select>
-          <select name="client_type" class="border p-2 rounded"><option value="alici">Alıcı</option><option value="kiraci">Kiracı</option><option value="satici">Satıcı</option><option value="evsahibi">Ev Sahibi</option></select>
-          <input type="number" name="budget_min" placeholder="Min Bütçe" class="border p-2 rounded"/>
-          <input type="number" name="budget_max" placeholder="Max Bütçe" class="border p-2 rounded"/>
-          <select name="currency" class="border p-2 rounded"><option value="TRY">TRY</option><option value="USD">USD</option><option value="EUR">EUR</option></select>
-          <input type="text" name="preferred_districts" placeholder="Tercih İlçeler (virgülle ayır)" class="col-span-2 border p-2 rounded"/>
-          <textarea name="required_specs" placeholder="Özel İstekler" class="col-span-2 border p-2 rounded" rows="2"></textarea>
-          <select name="assigned_agent_id" class="col-span-2 border p-2 rounded"><option value="">Sorumlu Agent</option>${agentOptions}</select>
-          <div class="col-span-2 flex justify-end space-x-3 mt-4">
-            <button type="button" onclick="closeModal()" class="px-4 py-2 bg-gray-200 rounded">İptal</button>
-            <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded">Kaydet</button>
-          </div>
-        </form>
-      `);
-      document.getElementById('clientForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const data = new FormData(e.target);
-        const payload = Object.fromEntries(data.entries());
-        payload.created_by = currentUser.id;
-        if (payload.preferred_districts) payload.preferred_districts = payload.preferred_districts.split(',').map(s => s.trim());
-        else payload.preferred_districts = [];
-        const { error } = await supabase.from('clients').insert([payload]);
-        if (error) { alert('Hata: ' + error.message); return; }
-        closeModal();
-        renderClients();
-      });
+  if (modalType === 'tasks') {
+    payload = {
+      title: getVal('f_title'), task_type: getVal('f_task_type'),
+      due_date: getVal('f_due_date') || null, notes: getVal('f_notes'),
+      assigned_agent_id: getVal('f_agent') || null
     };
+    if (!payload.title) { showToast('Görev başlığı zorunlu', true); return; }
+  }
 
-    window.editClient = async function(id) {
-      const { data: c } = await supabase.from('clients').select('*').eq('id', id).single();
-      if (!c) return;
-      // Quick edit with simple fields to avoid bloating, but implement similarly if needed.
-      // For brevity, I'll prompt to use the add form logic but in production you'd fill it.
-      alert('Düzenleme için lütfen kod içindeki editClient fonksiyonunu genişletin (detaylı form). Alternatif olarak doğrudan Supabase dashboard\'dan düzenleyin.');
-    };
-    window.deleteClient = async function(id) {
-      if (!confirm('Müşteriyi sil?')) return;
-      await supabase.from('clients').delete().eq('id', id);
-      renderClients();
-    };
+  let res;
+  if (modalMode === 'add') {
+    res = await db.from(modalType).insert([payload]);
+  } else {
+    res = await db.from(modalType).update(payload).eq('id', editId);
+  }
 
-    // ============================================================
-    // 11. TASKS (Kanban style)
-    // ============================================================
-    async function renderTasks() {
-      const { data: tasks } = await supabase
-        .from('tasks')
-        .select('*, assigned_to(id, full_name), property_id(id, title), client_id(id, first_name, last_name)')
-        .order('due_date', { ascending: true });
+  if (res.error) { showToast('Hata: ' + res.error.message, true); return; }
+  showToast(modalMode === 'add' ? 'Kaydedildi ✓' : 'Güncellendi ✓');
+  closeModal();
+  const renders = { contacts: renderContacts, listings: renderListings, deals: renderDeals, tasks: renderTasks };
+  renders[modalType]();
+}
 
-      let cards = '';
-      tasks?.forEach(t => {
-        const clientName = t.client_id ? `${t.client_id.first_name} ${t.client_id.last_name}` : '-';
-        const propTitle = t.property_id ? t.property_id.title : '-';
-        cards += `
-          <div class="bg-white p-4 rounded-lg shadow border-l-4 ${t.priority === 'high' ? 'border-red-500' : t.priority === 'medium' ? 'border-orange-400' : 'border-blue-400'}">
-            <div class="flex justify-between items-start">
-              <h4 class="font-semibold">${t.title}</h4>
-              <span class="text-xs px-2 py-1 rounded-full ${statusBadge(t.status)}">${t.status}</span>
-            </div>
-            <p class="text-sm text-gray-600 mt-1">${t.description || ''}</p>
-            <div class="flex flex-wrap gap-2 mt-2 text-xs text-gray-500">
-              <span><i class="far fa-user"></i> ${getAgentName(t.assigned_to)}</span>
-              <span><i class="far fa-calendar-alt"></i> ${formatDate(t.due_date)}</span>
-              <span><i class="fas fa-home"></i> ${propTitle}</span>
-              <span><i class="fas fa-user-tie"></i> ${clientName}</span>
-            </div>
-            <div class="mt-3 flex space-x-2">
-              <button onclick="editTask('${t.id}')" class="text-indigo-600 hover:text-indigo-800 text-sm"><i class="fas fa-edit"></i></button>
-              <button onclick="deleteTask('${t.id}')" class="text-red-600 hover:text-red-800 text-sm"><i class="fas fa-trash"></i></button>
-            </div>
-          </div>
-        `;
-      });
+async function deleteRecord(table, id) {
+  if (!confirm('Bu kaydı silmek istediğinizden emin misiniz?')) return;
+  const { error } = await db.from(table).delete().eq('id', id);
+  if (error) { showToast('Silme hatası: ' + error.message, true); return; }
+  showToast('Silindi');
+  navigate(currentPage);
+}
 
-      pageContent.innerHTML = `
-        <div class="flex justify-between items-center mb-6">
-          <h2 class="text-2xl font-bold text-gray-800">✅ Görevler</h2>
-          <button onclick="showAddTask()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium"><i class="fas fa-plus mr-2"></i>Yeni Görev</button>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          ${cards || '<div class="col-span-3 text-center text-gray-400 py-10">Henüz görev yok.</div>'}
-        </div>
-      `;
-    }
+// ============================================================
+// FORMS
+// ============================================================
+function agentOptions(selected) {
+  return agents.map(a => `<option value="${a.id}" ${selected === a.id ? 'selected':''} >${a.name}</option>`).join('');
+}
 
-    window.showAddTask = function() {
-      const agentOptions = agentsList.map(a => `<option value="${a.id}">${a.full_name}</option>`).join('');
-      openModal(`
-        <h3 class="text-xl font-bold mb-4">Yeni Görev</h3>
-        <form id="taskForm" class="space-y-4">
-          <input type="text" name="title" placeholder="Görev Başlığı *" required class="w-full border p-2 rounded"/>
-          <textarea name="description" placeholder="Açıklama" class="w-full border p-2 rounded" rows="2"></textarea>
-          <select name="assigned_to" class="w-full border p-2 rounded"><option value="">Atanacak Agent</option>${agentOptions}</select>
-          <input type="datetime-local" name="due_date" class="w-full border p-2 rounded"/>
-          <select name="priority" class="w-full border p-2 rounded"><option value="medium">Orta</option><option value="high">Yüksek</option><option value="low">Düşük</option></select>
-          <select name="status" class="w-full border p-2 rounded"><option value="pending">Bekliyor</option><option value="completed">Tamamlandı</option><option value="cancelled">İptal</option></select>
-          <div class="flex justify-end space-x-3">
-            <button type="button" onclick="closeModal()" class="px-4 py-2 bg-gray-200 rounded">İptal</button>
-            <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded">Kaydet</button>
-          </div>
-        </form>
-      `);
-      document.getElementById('taskForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const data = new FormData(e.target);
-        const payload = Object.fromEntries(data.entries());
-        payload.created_by = currentUser.id;
-        const { error } = await supabase.from('tasks').insert([payload]);
-        if (error) { alert('Hata: ' + error.message); return; }
-        closeModal();
-        renderTasks();
-      });
-    };
-    window.deleteTask = async function(id) {
-      if (!confirm('Görevi sil?')) return;
-      await supabase.from('tasks').delete().eq('id', id);
-      renderTasks();
-    };
-    window.editTask = async function(id) {
-      alert('Düzenleme fonksiyonu property ve client ile benzer şekilde eklenebilir. Şimdilik görevi silebilir veya yeniden oluşturabilirsiniz.');
-    };
+function contactForm(d={}) {
+  return `<div class="form-grid">
+    <div class="form-group full"><label>Ad Soyad *</label><input id="f_full_name" value="${d.full_name||''}"/></div>
+    <div class="form-group"><label>Telefon</label><input id="f_phone" value="${d.phone||''}"/></div>
+    <div class="form-group"><label>E-posta</label><input id="f_email" value="${d.email||''}"/></div>
+    <div class="form-group"><label>TC Kimlik</label><input id="f_tc" value="${d.tc_kimlik||''}"/></div>
+    <div class="form-group"><label>Müşteri Türü</label><select id="f_contact_type">
+      <option value="alici" ${d.contact_type==='alici'?'selected':''}>Alıcı</option>
+      <option value="satici" ${d.contact_type==='satici'?'selected':''}>Satıcı</option>
+      <option value="kiracı" ${d.contact_type==='kiracı'?'selected':''}>Kiracı</option>
+      <option value="ev_sahibi" ${d.contact_type==='ev_sahibi'?'selected':''}>Ev Sahibi</option>
+    </select></div>
+    <div class="form-group"><label>Kaynak</label><select id="f_source">
+      <option value="">Seçiniz</option>
+      <option value="referans" ${d.source==='referans'?'selected':''}>Referans</option>
+      <option value="sahibinden" ${d.source==='sahibinden'?'selected':''}>Sahibinden.com</option>
+      <option value="emlakjet" ${d.source==='emlakjet'?'selected':''}>Emlakjet</option>
+      <option value="instagram" ${d.source==='instagram'?'selected':''}>Instagram</option>
+      <option value="facebook" ${d.source==='facebook'?'selected':''}>Facebook</option>
+      <option value="tabela" ${d.source==='tabela'?'selected':''}>Tabela</option>
+      <option value="diger" ${d.source==='diger'?'selected':''}>Diğer</option>
+    </select></div>
+    <div class="form-group"><label>Min Bütçe (₺)</label><input id="f_budget_min" type="number" value="${d.budget_min||''}"/></div>
+    <div class="form-group"><label>Max Bütçe (₺)</label><input id="f_budget_max" type="number" value="${d.budget_max||''}"/></div>
+    <div class="form-group full"><label>Tercih Edilen İlçeler</label><input id="f_districts" value="${d.preferred_districts||''}"/></div>
+    <div class="form-group"><label>Takip Tarihi</label><input id="f_follow_up" type="date" value="${d.follow_up_date||''}"/></div>
+    <div class="form-group"><label>Danışman</label><select id="f_agent"><option value="">— Seçiniz —</option>${agentOptions(d.assigned_agent_id)}</select></div>
+    <div class="form-group full"><label>Notlar</label><textarea id="f_notes">${d.notes||''}</textarea></div>
+  </div>`;
+}
 
-    // ============================================================
-    // 12. TEAM
-    // ============================================================
-    async function renderTeam() {
-      const { data: profiles } = await supabase.from('profiles').select('*');
-      let cards = '';
-      profiles?.forEach(p => {
-        cards += `
-          <div class="bg-white p-6 rounded-xl shadow-sm flex items-center space-x-4">
-            <div class="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-bold text-xl">${p.full_name?.charAt(0) || 'A'}</div>
-            <div>
-              <p class="font-semibold">${p.full_name || 'İsimsiz'}</p>
-              <p class="text-sm text-gray-500">${p.role || 'agent'} ${p.id === currentUser.id ? '(Sen)' : ''}</p>
-            </div>
-          </div>
-        `;
-      });
-      pageContent.innerHTML = `
-        <h2 class="text-2xl font-bold text-gray-800 mb-6">👨‍💼 Ekip Üyeleri (${profiles?.length || 0})</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          ${cards}
-        </div>
-      `;
-    }
+function listingForm(d={}) {
+  return `<div class="form-grid">
+    <div class="form-group full"><label>Başlık *</label><input id="f_title" value="${d.title||''}"/></div>
+    <div class="form-group"><label>Emlak Türü *</label><select id="f_property_type">
+      ${['daire','villa','arsa','dukkan','ofis','depo','bina'].map(v=>`<option value="${v}" ${d.property_type===v?'selected':''}>${v}</option>`).join('')}
+    </select></div>
+    <div class="form-group"><label>İlan Türü *</label><select id="f_deal_type">
+      <option value="satilik" ${d.deal_type==='satilik'?'selected':''}>Satılık</option>
+      <option value="kiralik" ${d.deal_type==='kiralik'?'selected':''}>Kiralık</option>
+    </select></div>
+    <div class="form-group"><label>Durum</label><select id="f_status">
+      <option value="aktif" ${d.status==='aktif'?'selected':''}>Aktif</option>
+      <option value="opsiyonda" ${d.status==='opsiyonda'?'selected':''}>Opsiyonda</option>
+      <option value="satildi" ${d.status==='satildi'?'selected':''}>Satıldı</option>
+      <option value="kiraland" ${d.status==='kiraland'?'selected':''}>Kiralandı</option>
+      <option value="pasif" ${d.status==='pasif'?'selected':''}>Pasif</option>
+    </select></div>
+    <div class="form-group"><label>Şehir</label><input id="f_city" value="${d.city||'İstanbul'}"/></div>
+    <div class="form-group"><label>İlçe</label><input id="f_district" value="${d.district||''}"/></div>
+    <div class="form-group"><label>Mahalle</label><input id="f_neighborhood" value="${d.neighborhood||''}"/></div>
+    <div class="form-group full"><label>Adres</label><input id="f_address" value="${d.address||''}"/></div>
+    <div class="form-group"><label>Ada/Parsel</label><input id="f_ada" value="${d.ada_parsel||''}"/></div>
+    <div class="form-group"><label>Tapu Türü</label><select id="f_tapu_type">
+      <option value="">Seçiniz</option>
+      ${['kat_mulkiyeti','kat_irtifaki','hisseli','arsa','mustak'].map(v=>`<option value="${v}" ${d.tapu_type===v?'selected':''}>${v.replace(/_/g,' ')}</option>`).join('')}
+    </select></div>
+    <div class="form-group"><label>Brüt m²</label><input id="f_gross" type="number" value="${d.gross_m2||''}"/></div>
+    <div class="form-group"><label>Net m²</label><input id="f_net" type="number" value="${d.net_m2||''}"/></div>
+    <div class="form-group"><label>Bulunduğu Kat</label><input id="f_floor" type="number" value="${d.floor_number||''}"/></div>
+    <div class="form-group"><label>Toplam Kat</label><input id="f_total_floors" type="number" value="${d.total_floors||''}"/></div>
+    <div class="form-group"><label>Bina Yaşı</label><input id="f_age" type="number" value="${d.building_age||''}"/></div>
+    <div class="form-group"><label>Oda Sayısı</label><input id="f_rooms" value="${d.rooms||''}" placeholder="3+1"/></div>
+    <div class="form-group"><label>Isıtma</label><select id="f_heating">
+      <option value="">Seçiniz</option>
+      ${['dogalgaz_kombi','merkezi','dogalgaz_soba','klima','yok','diger'].map(v=>`<option value="${v}" ${d.heating===v?'selected':''}>${v.replace(/_/g,' ')}</option>`).join('')}
+    </select></div>
+    <div class="form-group"><label>Fiyat (₺) *</label><input id="f_price" type="number" value="${d.price||''}"/></div>
+    <div class="form-group"><label>Aidat (₺)</label><input id="f_aidat" type="number" value="${d.aidat||''}"/></div>
+    <div class="form-group"><label>EKB Sınıfı</label><select id="f_ekb">
+      <option value="">Seçiniz</option>
+      ${['A','B','C','D','E','F','G'].map(v=>`<option value="${v}" ${d.ekb_class===v?'selected':''}>${v}</option>`).join('')}
+    </select></div>
+    <div class="form-group full"><label>İlan URL (sahibinden/emlakjet)</label><input id="f_url" value="${d.listing_url||''}"/></div>
+    <div class="form-group"><label>Danışman</label><select id="f_agent"><option value="">— Seçiniz —</option>${agentOptions(d.assigned_agent_id)}</select></div>
+    <div class="form-group full"><label>Notlar</label><textarea id="f_notes">${d.notes||''}</textarea></div>
+  </div>`;
+}
 
-    // ============================================================
-    // 13. START
-    // ============================================================
-    initSession();
-  </script>
+function dealForm(d={}) {
+  return `<div class="form-grid">
+    <div class="form-group"><label>İşlem Türü *</label><select id="f_deal_type">
+      <option value="satis" ${d.deal_type==='satis'?'selected':''}>Satış</option>
+      <option value="kiralama" ${d.deal_type==='kiralama'?'selected':''}>Kiralama</option>
+    </select></div>
+    <div class="form-group"><label>Durum</label><select id="f_status">
+      <option value="gorusme" ${d.status==='gorusme'?'selected':''}>Görüşme</option>
+      <option value="teklif" ${d.status==='teklif'?'selected':''}>Teklif Verildi</option>
+      <option value="sozlesme" ${d.status==='sozlesme'?'selected':''}>Sözleşme</option>
+      <option value="kapandi" ${d.status==='kapandi'?'selected':''}>Kapandı</option>
+      <option value="iptal" ${d.status==='iptal'?'selected':''}>İptal</option>
+    </select></div>
+    <div class="form-group"><label>İstenen Fiyat (₺)</label><input id="f_asking_price" type="number" value="${d.asking_price||''}"/></div>
+    <div class="form-group"><label>Satış Fiyatı (₺)</label><input id="f_final_price" type="number" value="${d.final_price||''}" oninput="calcComm()"/></div>
+    <div class="form-group"><label>Komisyon Alıcı (%)</label><input id="f_comm_buyer" type="number" value="${d.commission_rate_buyer||2}" oninput="calcComm()"/></div>
+    <div class="form-group"><label>Komisyon Satıcı (%)</label><input id="f_comm_seller" type="number" value="${d.commission_rate_seller||2}" oninput="calcComm()"/></div>
+    <div class="form-group full" style="background:rgba(201,168,76,0.08);border:1px solid var(--gold);border-radius:6px;padding:12px;">
+      <label>Hesaplanan Komisyon</label>
+      <div id="comm_display" style="font-size:18px;font-weight:700;color:var(--gold);margin-top:4px;">${d.commission_amount ? formatPrice(d.commission_amount) + ' ₺' : '—'}</div>
+    </div>
+    <div class="form-group"><label>Sözleşme Tarihi</label><input id="f_contract_date" type="date" value="${d.contract_date||''}"/></div>
+    <div class="form-group"><label>Tapu Tarihi</label><input id="f_tapu_date" type="date" value="${d.tapu_date||''}"/></div>
+    <div class="form-group"><label>Teslim Tarihi</label><input id="f_handover" type="date" value="${d.handover_date||''}"/></div>
+    <div class="form-group"><label>Noter</label><input id="f_notary" value="${d.notary_name||''}"/></div>
+    <div class="form-group"><label>Danışman</label><select id="f_agent"><option value="">— Seçiniz —</option>${agentOptions(d.assigned_agent_id)}</select></div>
+    <div class="form-group full"><label>Notlar</label><textarea id="f_notes">${d.notes||''}</textarea></div>
+  </div>`;
+}
+
+function taskForm(d={}) {
+  return `<div class="form-grid">
+    <div class="form-group full"><label>Görev Başlığı *</label><input id="f_title" value="${d.title||''}"/></div>
+    <div class="form-group"><label>Görev Türü</label><select id="f_task_type">
+      ${['arama','gosterim','randevu','tapu','noter','belediye','diger'].map(v=>`<option value="${v}" ${d.task_type===v?'selected':''}>${taskTypeName(v)}</option>`).join('')}
+    </select></div>
+    <div class="form-group"><label>Tarih / Saat</label><input id="f_due_date" type="datetime-local" value="${d.due_date ? d.due_date.slice(0,16) : ''}"/></div>
+    <div class="form-group"><label>Danışman</label><select id="f_agent"><option value="">— Seçiniz —</option>${agentOptions(d.assigned_agent_id)}</select></div>
+    <div class="form-group full"><label>Notlar</label><textarea id="f_notes">${d.notes||''}</textarea></div>
+  </div>`;
+}
+
+function calcComm() {
+  const fp = parseFloat(document.getElementById('f_final_price')?.value) || 0;
+  const br = parseFloat(document.getElementById('f_comm_buyer')?.value) || 0;
+  const sr = parseFloat(document.getElementById('f_comm_seller')?.value) || 0;
+  const comm = fp * (br + sr) / 100;
+  const el = document.getElementById('comm_display');
+  if (el) el.textContent = comm > 0 ? formatPrice(comm) + ' ₺' : '—';
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+function formatPrice(n) {
+  if (!n) return '0';
+  return Math.round(n).toLocaleString('tr-TR');
+}
+
+function statusBadge(s) {
+  const map = { aktif:'green', opsiyonda:'orange', satildi:'blue', kiraland:'blue', pasif:'gray' };
+  const names = { aktif:'Aktif', opsiyonda:'Opsiyonda', satildi:'Satıldı', kiraland:'Kiralandı', pasif:'Pasif' };
+  return `<span class="badge badge-${map[s]||'gray'}">${names[s]||s}</span>`;
+}
+
+function dealStatusBadge(s) {
+  const map = { gorusme:'blue', teklif:'orange', sozlesme:'orange', kapandi:'green', iptal:'red' };
+  const names = { gorusme:'Görüşme', teklif:'Teklif', sozlesme:'Sözleşme', kapandi:'Kapandı', iptal:'İptal' };
+  return `<span class="badge badge-${map[s]||'gray'}">${names[s]||s}</span>`;
+}
+
+function contactTypeName(t) {
+  return { alici:'Alıcı', satici:'Satıcı', kiracı:'Kiracı', ev_sahibi:'Ev Sahibi' }[t] || t;
+}
+
+function sourceName(s) {
+  return { referans:'Referans', sahibinden:'Sahibinden', emlakjet:'Emlakjet', instagram:'Instagram', facebook:'Facebook', tabela:'Tabela', diger:'Diğer' }[s] || s || '-';
+}
+
+function taskTypeName(t) {
+  return { arama:'📞 Arama', gosterim:'🏠 Gösterim', randevu:'📅 Randevu', tapu:'📋 Tapu', noter:'✍️ Noter', belediye:'🏛️ Belediye', diger:'📌 Diğer' }[t] || t;
+}
+
+function showToast(msg, isError=false) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = isError ? 'error' : '';
+  el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 3000);
+}
+
+// ============================================================
+// START
+// ============================================================
+init();
+</script>
 </body>
 </html>
