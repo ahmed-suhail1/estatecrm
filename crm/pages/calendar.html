@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Randevular — Emlak CRM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/layout.css">
+<link rel="stylesheet" href="../css/leads.css">
+<link rel="stylesheet" href="../css/calendar.css">
+</head>
+<body>
+
+<div class="app-shell" id="shellRoot"></div>
+
+<template id="pageTemplate">
+  <div class="page">
+    <div class="page-header">
+      <div>
+        <h1>Randevular</h1>
+        <p class="subtitle">Ekibin gezi ve görüşme takvimi.</p>
+      </div>
+      <div class="page-actions">
+        <button class="btn btn-primary" id="addApptBtn">+ Yeni Randevu</button>
+      </div>
+    </div>
+
+    <!-- Masaüstü: hafta gridi -->
+    <div class="card desktop-only" style="padding: var(--space-4);">
+      <div class="week-nav">
+        <button class="btn btn-ghost btn-sm" id="prevWeek">← Önceki Hafta</button>
+        <div class="week-label" id="weekLabel">—</div>
+        <button class="btn btn-ghost btn-sm" id="nextWeek">Sonraki Hafta →</button>
+      </div>
+      <div class="week-grid" id="weekGrid"></div>
+    </div>
+
+    <!-- Mobil: ajanda listesi -->
+    <div class="mobile-only" id="agendaList">
+      <div class="spinner" style="margin:20px auto;"></div>
+    </div>
+  </div>
+</template>
+
+<div class="modal-overlay" id="apptModalOverlay">
+  <div class="modal card" id="apptModal">
+    <div class="modal-header">
+      <h3 id="apptModalTitle">Yeni Randevu</h3>
+      <button class="btn btn-ghost btn-icon" id="closeApptModal" aria-label="Kapat">✕</button>
+    </div>
+    <form id="apptForm">
+      <input type="hidden" id="apptId">
+      <div class="field">
+        <label for="apptCustomer">Müşteri *</label>
+        <select class="select" id="apptCustomer" required></select>
+      </div>
+      <div class="field">
+        <label for="apptProperty">İlan (opsiyonel)</label>
+        <select class="select" id="apptProperty">
+          <option value="">— Seçilmedi —</option>
+        </select>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="apptDate">Tarih *</label>
+          <input class="input" type="date" id="apptDate" required>
+        </div>
+        <div class="field">
+          <label for="apptTime">Saat *</label>
+          <input class="input" type="time" id="apptTime" required>
+        </div>
+      </div>
+      <div class="field">
+        <label for="apptLocation">Konum</label>
+        <input class="input" id="apptLocation" placeholder="Ofis, ilan adresi, vb.">
+      </div>
+      <div class="field">
+        <label for="apptStatus">Durum</label>
+        <select class="select" id="apptStatus">
+          <option value="scheduled">Planlandı</option>
+          <option value="done">Tamamlandı</option>
+          <option value="cancelled">İptal edildi</option>
+          <option value="no-show">Gelmedi</option>
+        </select>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" id="cancelApptBtn">Vazgeç</button>
+        <button type="submit" class="btn btn-primary" id="saveApptBtn">Kaydet</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="toastRoot"></div>
+
+<script type="module" src="../js/calendar.js"></script>
+</body>
+</html>

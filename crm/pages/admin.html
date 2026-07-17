@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yönetim — Emlak CRM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/layout.css">
+<style>
+  .agent-row {
+    display: flex; align-items: center; gap: var(--space-3);
+    padding: var(--space-3) 0;
+    border-bottom: 1px solid var(--color-line-soft);
+    flex-wrap: wrap;
+  }
+  .agent-row:last-child { border-bottom: none; }
+  .agent-row-info { flex: 1; min-width: 160px; }
+  .agent-row-name { font-weight: 700; }
+  .agent-row-email { font-size: var(--text-sm); color: var(--color-ink-soft); }
+  .agent-row-actions { display: flex; gap: var(--space-2); align-items: center; }
+  .section-title { margin-bottom: var(--space-4); }
+</style>
+</head>
+<body>
+
+<div class="app-shell" id="shellRoot"></div>
+
+<template id="pageTemplate">
+  <div class="page">
+    <div class="page-header">
+      <div>
+        <h1>Yönetim</h1>
+        <p class="subtitle">Danışman hesaplarını onaylayın ve yönetin.</p>
+      </div>
+    </div>
+
+    <div class="card" style="padding: var(--space-5); margin-bottom: var(--space-5);">
+      <h3 class="section-title">Onay Bekleyenler</h3>
+      <div id="pendingList"><div class="spinner" style="margin:16px auto;"></div></div>
+    </div>
+
+    <div class="card" style="padding: var(--space-5);">
+      <h3 class="section-title">Tüm Danışmanlar</h3>
+      <div id="agentList"><div class="spinner" style="margin:16px auto;"></div></div>
+    </div>
+  </div>
+</template>
+
+<div id="toastRoot"></div>
+
+<script type="module" src="../js/admin.js"></script>
+</body>
+</html>
