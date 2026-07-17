@@ -106,14 +106,14 @@ async function loadFeed() {
       const f = docSnap.data();
       const time = f.createdAt?.toDate ? f.createdAt.toDate() : new Date();
       rows.push(`
-        <div class="feed-item">
-          <div class="feed-avatar">${initials(f.agentName)}</div>
-          <div>
-            <div class="feed-text">${escapeHtml(f.text)}</div>
-            <div class="feed-time">${formatRelativeDate(time)}</div>
-          </div>
-        </div>
-      `);
+  <div class="feed-item">
+    <div class="feed-avatar">${initials(f.agentName)}</div>
+    <div>
+      <div class="feed-text">${f.text}</div>
+      <div class="feed-time">${formatRelativeDate(time)}</div>
+    </div>
+  </div>
+`);
     });
     el.innerHTML = rows.join("");
   } catch (err) {
