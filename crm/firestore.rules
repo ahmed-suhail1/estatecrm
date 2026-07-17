@@ -1,0 +1,11 @@
+rules_version = '2';
+
+// Basit kurallar: yalnızca giriş yapmış kullanıcılar okuyup yazabilir.
+// Ekip küçük ve güvenilir olduğu için karmaşık yetkilendirme eklenmedi.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
